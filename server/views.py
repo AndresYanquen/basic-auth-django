@@ -12,6 +12,8 @@ from .serializers import UserSerializer
 
 @api_view(['POST'])
 def signup(request):
+    if User.objects.filter(email=request.data.get('email')).exists():
+        return Response({'detail': 'Email is already in use'}, status=status.HTTP_400_BAD_REQUEST)
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -24,9 +26,9 @@ def signup(request):
 
 @api_view(['POST'])
 def login(request):
-    user = get_object_or_404(User, username=request.data['username'])
+    user = get_object_or_404(User, email=request.data['email'])
     if not user.check_password(request.data['password']):
-        return Response("missing user", status=status.HTTP_404_NOT_FOUND)
+        return Response({ 'detail': 'Invalid Password' }, status=status.HTTP_404_NOT_FOUND)
     token, created = Token.objects.get_or_create(user=user)
     serializer = UserSerializer(user)
     return Response({'token': token.key, 'user': serializer.data})
